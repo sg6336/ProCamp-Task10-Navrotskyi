@@ -23,7 +23,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +47,10 @@ UART_HandleTypeDef huart4;
 osThreadId defaultTaskHandle;
 osThreadId myTask02Handle;
 /* USER CODE BEGIN PV */
-
+osThreadId Task01Handle;
+unsigned long ulIdleCycleCount = 0UL;
+char str1[60];
+char str_buf[1000]={'\0'};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,7 +61,7 @@ void StartDefaultTask(void const * argument);
 void StartTask02(void const * argument);
 
 /* USER CODE BEGIN PFP */
-
+void Task01(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -295,7 +299,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void vApplicationIdleHook( void )
+{
+	ulIdleCycleCount++;
+}
 
+void Task01(void const * argument)
+{
+  sprintf(str1,"Task01: \t %lu \r\n", osKernelSysTick());
+  HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
+  sprintf(str1,"ulIdleCycleCount = %lu \r\n\n", ulIdleCycleCount);
+  HAL_UART_Transmit(&huart4, (uint8_t*)str1, strlen(str1), 100);
+  osDelay(100);
+  osThreadTerminate(NULL);
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -311,7 +328,33 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	HAL_UART_Transmit(&huart4,(uint8_t*)"//------\n\r",strlen("//------\n\r"),100);
+
+	osThreadDef(tsk01, Task01, osPriorityLow, 0, 128);
+	Task01Handle = osThreadCreate(osThread(tsk01), NULL);
+
+    unsigned portBASE_TYPE task_priority_2;
+    task_priority_2 = uxTaskPriorityGet(myTask02Handle);
+
+    osThreadList((unsigned char *)str_buf);
+    sprintf(str1,"Stage 1:\r\nName          State  Priority  Stack   Num\r\n");
+    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
+    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
+    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
+    osDelay(500);
+
+    vTaskPrioritySet(myTask02Handle, task_priority_2 - 1);
+
+    osThreadList((unsigned char *)str_buf);
+    sprintf(str1,"Stage 2:\r\nName          State  Priority  Stack   Num\r\n");
+    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
+    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
+    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
+
+    HAL_Delay(5000);
+    vTaskPrioritySet(myTask02Handle, task_priority_2);
+
+    osDelay(500);
   }
   /* USER CODE END 5 */
 }
@@ -329,7 +372,8 @@ void StartTask02(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+	osDelay(100);
   }
   /* USER CODE END StartTask02 */
 }
