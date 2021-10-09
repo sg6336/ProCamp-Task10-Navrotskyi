@@ -23,9 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stdio.h"
-//#include "stdint.h"
-#include "string.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,28 +42,22 @@
 
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart4;
-UART_HandleTypeDef huart5;
 
 osThreadId defaultTaskHandle;
 osThreadId myTask02Handle;
 /* USER CODE BEGIN PV */
-char str1[60];
-char str_buf[1000]={'\0'};
-osThreadId Task01Handle,Task02Handle,Task03Handle;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_UART4_Init(void);
-static void MX_UART5_Init(void);
 void StartDefaultTask(void const * argument);
 void StartTask02(void const * argument);
 
 /* USER CODE BEGIN PFP */
-void Task01(void const * argument);
-void Task02(void const * argument);
-void Task03(void const * argument);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -102,7 +94,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_UART4_Init();
-  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -125,11 +116,11 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 255);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of myTask02 */
-  osThreadDef(myTask02, StartTask02, osPriorityIdle, 0, 128);
+  osThreadDef(myTask02, StartTask02, osPriorityNormal, 0, 128);
   myTask02Handle = osThreadCreate(osThread(myTask02), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -188,9 +179,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART5;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_UART4;
   PeriphClkInit.Uart4ClockSelection = RCC_UART4CLKSOURCE_PCLK1;
-  PeriphClkInit.Uart5ClockSelection = RCC_UART5CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -233,41 +223,6 @@ static void MX_UART4_Init(void)
 }
 
 /**
-  * @brief UART5 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_UART5_Init(void)
-{
-
-  /* USER CODE BEGIN UART5_Init 0 */
-
-  /* USER CODE END UART5_Init 0 */
-
-  /* USER CODE BEGIN UART5_Init 1 */
-
-  /* USER CODE END UART5_Init 1 */
-  huart5.Instance = UART5;
-  huart5.Init.BaudRate = 38400;
-  huart5.Init.WordLength = UART_WORDLENGTH_8B;
-  huart5.Init.StopBits = UART_STOPBITS_1;
-  huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_TX_RX;
-  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart5) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN UART5_Init 2 */
-
-  /* USER CODE END UART5_Init 2 */
-
-}
-
-/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -281,7 +236,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
@@ -341,35 +295,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void Task01(void const * argument)
-{
-  HAL_UART_Transmit(&huart5,(uint8_t*)"Task01: \t",strlen("Task01: \t"),100);
-  sprintf(str1,"%lu ", osKernelSysTick());
-  HAL_UART_Transmit(&huart5,(uint8_t*)str1,strlen(str1),100);
-  HAL_UART_Transmit(&huart5,(uint8_t*)"\r\n",2,100);
-  osDelay(100);
-  osThreadTerminate(NULL);
-}
-//---------------------------------------------------------------
-void Task02(void const * argument)
-{
-  HAL_UART_Transmit(&huart5,(uint8_t*)"Task02: \t",strlen("Task02: \t"),100);
-  sprintf(str1,"%lu ", osKernelSysTick());
-  HAL_UART_Transmit(&huart5,(uint8_t*)str1,strlen(str1),100);
-  HAL_UART_Transmit(&huart5,(uint8_t*)"\r\n",2,100);
-  osDelay(100);
-  osThreadTerminate(NULL);
-}
-//---------------------------------------------------------------
-void Task03(void const * argument)
-{
-  HAL_UART_Transmit(&huart5,(uint8_t*)"Task03: \t",strlen("Task03: \t"),100);
-  sprintf(str1,"%lu ", osKernelSysTick());
-  HAL_UART_Transmit(&huart5,(uint8_t*)str1,strlen(str1),100);
-  HAL_UART_Transmit(&huart5,(uint8_t*)"\r\n",2,100);
-  osDelay(100);
-  osThreadTerminate(NULL);
-}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -385,52 +311,7 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_UART_Transmit(&huart4,(uint8_t*)"//------\n\r",strlen("//------\n\r"),100);
-
-	osThreadDef(tsk01, Task01, osPriorityLow, 0, 128);
-    Task01Handle = osThreadCreate(osThread(tsk01), NULL);
-    osThreadList((unsigned char *)str_buf);
-    sprintf(str1,"Stage 1:\r\n");
-    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
-    osDelay(500);
-    osThreadList((unsigned char *)str_buf);
-    sprintf(str1,"Stage 2:\r\n");
-    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
-    osDelay(500);
-
-/*    osThreadDef(tsk02, Task02, osPriorityLow, 0, 128);
-    Task02Handle = osThreadCreate(osThread(tsk02), NULL);
-    osThreadList((unsigned char *)str_buf);
-    sprintf(str1,"Stage 3:\r\n");
-    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
-    osDelay(500);
-    osThreadList((unsigned char *)str_buf);
-    sprintf(str1,"Stage 4:\r\n");
-    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
-    osDelay(500);*/
-
-    osThreadDef(tsk03, Task03, osPriorityLow, 0, 128);
-    Task03Handle = osThreadCreate(osThread(tsk03), NULL);
-    osThreadList((unsigned char *)str_buf);
-    sprintf(str1,"Stage 5:\r\n");
-    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
-    osDelay(500);
-    osThreadList((unsigned char *)str_buf);
-    sprintf(str1,"Stage 6:\r\n");
-    HAL_UART_Transmit(&huart4,(uint8_t*)str1,strlen(str1),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)str_buf,strlen(str_buf),100);
-    HAL_UART_Transmit(&huart4,(uint8_t*)"\r\n",2,100);
-    osDelay(5000);
+    osDelay(1);
   }
   /* USER CODE END 5 */
 }
